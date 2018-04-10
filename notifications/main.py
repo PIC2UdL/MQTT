@@ -11,14 +11,12 @@ class Notification(object):
 class MockNotification(Notification):
     def __init__(self):
         super(MockNotification, self).__init__()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sockd = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     def notify(self, user, message):
-        self.sock.sendto(message, user)
+        self.sockd.sendto(message, user)
 
     def broadcast(self, message):
-        ip_address = '0.0.0.0'
-        port = 10000
-
-        self.sock.sendto(message,(ip_address, port))
+        self.sock.sendall(message)

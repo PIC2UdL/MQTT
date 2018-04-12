@@ -34,9 +34,6 @@ class nfckeg(object):
         self.NFC = None
         self.Flow_meter = None
         self.Relay = None
-        self.NFCReal = None
-        self.Flow_meterReal = None
-        self.RelayReal = None
         self.beer = {}
         self.pin = pin
         self.user = (ip_address, port)
@@ -58,55 +55,32 @@ class nfckeg(object):
             self.Relay = sensors.mocksensor.RelaySensor(Relay_name)
         #RealSensor
         else:
-            self.NFCReal = sensors.realsensor.NFCSensor(NFC_name)
-            self.Flow_meterReal = sensors.realsensor.FlowSensor(Flow_name, self.pin)
-            self.RelayReal = sensors.realsensor.RelaySensor(Relay_name)
+            self.NFC= sensors.realsensor.NFCSensor(NFC_name)
+            self.Flow_meter = sensors.realsensor.FlowSensor(Flow_name, self.pin)
+            self.Relay = sensors.realsensor.RelaySensor(Relay_name)
         pass
 
 
     def get_state(self):
-        if (self.imp == 'mock'):
-            self.NFC.setup()
-            data_NFC = self.NFC.get_data()
+        self.NFC.setup()
+        data_NFC = self.NFC.get_data()
 
-            if( data_NFC != None):
-                print data_NFC
-                self.Relay.setup('on')
+        if( data_NFC != None):
+            self.Relay.setup('on')
 
-                while True:
-                    self.Flow_meter.setup()
-                    data_FLOW = self.Flow_meter.get_data()
-                    print data_FLOW
+            while True:
+                self.Flow_meter.setup()
+                data_FLOW = self.Flow_meter.get_data()
 
-                    if(data_FLOW != 0):
-                        self.beer[data_NFC] = self.beer.get(data_NFC, 0) + data_FLOW
-                        if(self.lastdata_FLOW != 0):
-                            difference = data_FLOW - self.lastdata_FLOW
-                            logger.debug('Difference: {}'.format(difference))
-                        self.lastdata_FLOW = data_FLOW
-                        break
-                self.Relay.setup('off')
-        else:
-            self.NFCReal.setup()
-            data_NFC = self.NFCReal.get_data()
+                if(data_FLOW != 0):
+                    self.beer[data_NFC] = self.beer.get(data_NFC, 0) + data_FLOW
+                    if(self.lastdata_FLOW != 0):
+                        difference = data_FLOW - self.lastdata_FLOW
+                        logger.debug('Difference: {}'.format(difference))
+                    self.lastdata_FLOW = data_FLOW
+                    break
+            self.Relay.setup('off')
 
-            if( data_NFC != None):
-                print data_NFC
-                self.RelayReal.setup('on')
-
-                while True:
-                    self.Flow_meterReal.setup()
-                    data_FLOW = self.Flow_meterReal.get_data()
-                    print data_FLOW
-
-                    if(data_FLOW != 0):
-                        self.beer[data_NFC] = self.beer.get(data_NFC, 0) + data_FLOW
-                        if(self.lastdata_FLOW != 0):
-                            difference = data_FLOW - self.lastdata_FLOW
-                            logger.debug('Difference: {}'.format(difference))
-                        self.lastdata_FLOW = data_FLOW
-                        break
-                self.RelayReal.setup('off')
 
     def main(self):
         self.create_sensors()
@@ -126,10 +100,6 @@ class nfckeg(object):
 
 if __name__=='__main__':
     args = parser.parse_args()
-    ip_address = args.ip
-    port = args.p
-    pin = args.pin
-    imp = args.imp
     random.seed(2)
-    NFCKEG = nfckeg(ip_address, port, pin, imp)
+    NFCKEG = nfckeg(args.ip, args.p, args.pin, args.imp)
     NFCKEG.main()

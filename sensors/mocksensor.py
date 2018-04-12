@@ -30,18 +30,14 @@ class FlowSensor(NumericSensor):
     """FlowSensor"""
     def __init__(self, name):
         super(FlowSensor, self).__init__(name)
-        self.value = None
         self.flow_acumulative = 0.0
 
     def setup(self):
             self.value = Sensorslibrary.flow()
-            if (self.value != None):
-                self.flow_acumulative += self.value
+            self.flow_acumulative += self.value
 
     def get_acumulative(self):
-            if (self.flow_acumulative != 0.0):
-                return self.flow_acumulative
-            return "Error"
+            return self.flow_acumulative
             pass
 
     def reset_cumulative(self):

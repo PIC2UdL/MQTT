@@ -18,13 +18,11 @@ class Sensorslibrary(object):
 
     @staticmethod
     def flow():
-        flow = None
         time.sleep(1)
-        if random.randint(1, 4) == 3:
-            flow = 0.0
-            a = 15
-            while a > 0:
-                flow += random.random()
-                a -= 1
-                time.sleep(1)
+        flow = 0.0
+        a = 15
+        while a > 0:
+            flow += random.random()
+            a -= 1
+            time.sleep(1)
         return flow

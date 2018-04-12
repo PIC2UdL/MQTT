@@ -32,33 +32,31 @@ class FlowSensor(NumericSensor):
     """FlowSensor"""
     def __init__(self, name, pin):
         super(FlowSensor, self).__init__(name)
-        self.value = 0
+        self.value = 0.0
         self.flow_acumulative = 0.0
         self.pin = pin
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        self.lastvalue = 0
+        self.lastvalue = 0.0
         self.state = True
 
     def countPulse(channel):
-        self.value = self.value + 0.5/1765
+        self.value = self.value + (0.5/1765)
         if(self.lastvalue == self.value):
             self.state = False
         self.lastvalue = self.value
 
     def setup(self):
         GPIO.add_event_detect(self.pin, GPIO.RISING, callback=self.countPulse)
+
         while self.state:
             time.sleep(1)
 
-        if (self.value != None):
-            self.flow_acumulative += self.value
+        self.flow_acumulative += self.value
         GPIO.cleanup()
 
     def get_acumulative(self):
-            if (self.flow_acumulative != 0.0):
-                return self.flow_acumulative
-            return "Error"
+            return self.flow_acumulative
             pass
 
     def reset_cumulative(self):

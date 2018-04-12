@@ -59,7 +59,7 @@ class nfckeg(object):
         #RealSensor
         else:
             self.NFCReal = sensors.realsensor.NFCSensor(NFC_name)
-            self.Flow_meterReal = sensors.realsensor.FlowSensor(Flow_name)
+            self.Flow_meterReal = sensors.realsensor.FlowSensor(Flow_name, self.pin)
             self.RelayReal = sensors.realsensor.RelaySensor(Relay_name)
         pass
 
@@ -68,13 +68,16 @@ class nfckeg(object):
         if (self.imp == 'mock'):
             self.NFC.setup()
             data_NFC = self.NFC.get_data()
+
             if( data_NFC != None):
                 print data_NFC
                 self.Relay.setup('on')
+
                 while True:
                     self.Flow_meter.setup()
                     data_FLOW = self.Flow_meter.get_data()
                     print data_FLOW
+
                     if(data_FLOW != 0):
                         self.beer[data_NFC] = self.beer.get(data_NFC, 0) + data_FLOW
                         if(self.lastdata_FLOW != 0):
@@ -86,13 +89,16 @@ class nfckeg(object):
         else:
             self.NFCReal.setup()
             data_NFC = self.NFCReal.get_data()
+
             if( data_NFC != None):
                 print data_NFC
                 self.RelayReal.setup('on')
+
                 while True:
                     self.Flow_meterReal.setup()
                     data_FLOW = self.Flow_meterReal.get_data()
                     print data_FLOW
+
                     if(data_FLOW != 0):
                         self.beer[data_NFC] = self.beer.get(data_NFC, 0) + data_FLOW
                         if(self.lastdata_FLOW != 0):

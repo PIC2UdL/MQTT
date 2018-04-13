@@ -1,8 +1,9 @@
-from .binary import BinarySensor
-from .numeric import NumericSensor
+import time
+
 import RPi.GPIO as GPIO
 import SimpleMFRC522
-import time, sys
+
+from .numeric import NumericSensor
 
 
 class NFCSensor(NumericSensor):
@@ -56,20 +57,7 @@ class FlowSensor(NumericSensor):
         GPIO.cleanup()
 
     def get_acumulative(self):
-            return self.flow_acumulative
-            pass
+        return self.flow_acumulative
 
     def reset_cumulative(self):
-            self.flow_acumulative = 0.0
-            pass
-
-class RelaySensor(BinarySensor):
-    """RelaySensor"""
-    def __init__(self, name):
-        super(RelaySensor, self).__init__(name)
-
-    def setup(self, status):
-        if (status == 'on'):
-            self.state = 1
-        else:
-            self.state = 0
+        self.flow_acumulative = 0.0

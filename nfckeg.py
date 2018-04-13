@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 #-*-coding:utf_8-*-
-import time
-import notifications
-import sensors
-import random
+import ConfigParser
 import argparse
 import logging
+import random
+import time
+
+import notifications
+import sensors
+
+#
 
 #Create Logging
 logger = logging.getLogger(__name__)
@@ -21,44 +25,44 @@ file_handler.setFormatter(formatter)
 #Add file and stream in the logging already created before
 logger.addHandler(file_handler)
 
-parser = argparse.ArgumentParser(description= 'Receive the arguments for the program')
-parser.add_argument('-ip', type = str, default = 'localhost', help = 'Receive the ip_address of the user')
-parser.add_argument('-p', type = str, default = '10000', help = 'Receive the port to communicate with the user')
-parser.add_argument('-pin', type = int, default = '23', help = 'Receive the pin of flow sensor')
-parser.add_argument('-imp', type = str, default = 'mock', help = 'Choose between mock or real implementation')
+parser = argparse.ArgumentParser(description='Receive the arguments for the program')
+parser.add_argument('-pin', type=int, default='23', help='Receive the pin of flow sensor')
+parser.add_argument('-impn', type=str, default='mock', choices=['mock', 'real'],
+                    help='Choose between mock or real implementation for NFC')
+parser.add_argument('-impf', type=str, default='mock', choices=['mock', 'real'],
+                    help='Choose between mock or real implementation for flow meter')
+
 
 class nfckeg(object):
     """nfckeg"""
-    def __init__(self, ip_address, port, pin, imp):
+
+    def __init__(self, pin, impn, impf):
         super(nfckeg, self).__init__()
         self.NFC = None
         self.Flow_meter = None
         self.Relay = None
         self.beer = {}
         self.pin = pin
-        self.user = (ip_address, port)
         self.lastdata_FLOW = 0.0
-        self.imp = imp
-
+        self.impn = impn
+        self.impf = impf
 
         self.notify = notifications.MockNotification()
-        #self.notify = notifications.TelegramNotification()
+        # self.notify = notifications.TelegramNotification()
 
     def create_sensors(self):
         NFC_name = "NFC"
         Flow_name = "FLOW"
-        Relay_name = "RELAY"
-        #MockSensor
-        if (self.imp == 'mock'):
+
+        if (self.impn == 'mock'):
             self.NFC = sensors.mocksensor.NFCSensor(NFC_name)
-            self.Flow_meter = sensors.mocksensor.FlowSensor(Flow_name)
-            self.Relay = sensors.mocksensor.RelaySensor(Relay_name)
-        #RealSensor
         else:
-            self.NFC= sensors.realsensor.NFCSensor(NFC_name)
+            self.NFC = sensors.realsensor.NFCSensor(NFC_name)
+
+        if (self.impf == 'mock'):
+            self.Flow_meter = sensors.mocksensor.FlowSensor(Flow_name)
+        else:
             self.Flow_meter = sensors.realsensor.FlowSensor(Flow_name, self.pin)
-            self.Relay = sensors.realsensor.RelaySensor(Relay_name)
-        pass
 
 
     def get_state(self):
@@ -66,7 +70,7 @@ class nfckeg(object):
         data_NFC = self.NFC.get_data()
 
         if( data_NFC != None):
-            self.Relay.setup('on')
+            print 'Relay on'
 
             while True:
                 self.Flow_meter.setup()
@@ -79,7 +83,7 @@ class nfckeg(object):
                         logger.debug('Difference: {}'.format(difference))
                     self.lastdata_FLOW = data_FLOW
                     break
-            self.Relay.setup('off')
+            print 'Relay off'
 
 
     def main(self):
@@ -99,7 +103,31 @@ class nfckeg(object):
         pass
 
 if __name__=='__main__':
+
+    config = ConfigParser.RawConfigParser()
     args = parser.parse_args()
+    try:
+        config.read('configuration_file.cfg')
+        pin = config.getint('Section1', 'pin')
+        imp_n = config.get('Section1', 'NFC_implementation')
+        imp_f = config.get('Section1', 'Flow_meter_implementation')
+
+    except:
+
+        config.add_section('Section1')
+        config.set('Section1', 'pin', str(args.pin))
+        config.set('Section1', 'NFC_implementation', args.impn)
+        config.set('Section1', 'Flow_meter_implementation', args.impf)
+
+        with open('configuration_file.cfg', 'wb') as configfile:
+            config.write(configfile)
+
+    config.read('configuration_file.cfg')
+    pin = config.getint('Section1', 'pin')
+    imp_n = config.get('Section1', 'NFC_implementation')
+    imp_f = config.get('Section1', 'Flow_meter_implementation')
+
+
     random.seed(2)
-    NFCKEG = nfckeg(args.ip, args.p, args.pin, args.imp)
+    NFCKEG = nfckeg(args.pin, args.impn, args.impf)
     NFCKEG.main()

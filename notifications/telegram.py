@@ -11,3 +11,6 @@ class TelegramNotification(Notification):
     def notify(self, string):
         print("****"+string+"****")
         self.bot.sendMessage(self.chat_id, "NOT: "+string)
+
+    def broadcast(self, message):
+        pass

@@ -105,7 +105,7 @@ class nfckeg(object):
             time.sleep(1)
         pass
 
-
+# Function to check if there is a file with given name and create new template or read given file.
 def check_cfg(file_name):
     import os.path
     config = crear_plantilla()
@@ -121,7 +121,7 @@ def check_cfg(file_name):
 def get_value(config, section, option):
     return config.getint(section, option)
 
-
+# Function that give information about wich field you have to fill
 def read_cfg(file_name, config):
     config.read(file_name)
     write_config(config, file_name)
@@ -132,6 +132,7 @@ def read_cfg(file_name, config):
         sys.exit()
 
 
+# Check if in given configuration all values are filled, return a list with empty ones
 def get_remaining(config):
     remaining = []
     for k, v in config._sections.items():
@@ -141,6 +142,7 @@ def get_remaining(config):
     return remaining
 
 
+# Function that create a template to store configuration
 def crear_plantilla():
     config = ConfigParser.RawConfigParser()
     config.add_section('Section1')
@@ -151,6 +153,7 @@ def crear_plantilla():
     return config
 
 
+# Function that write in a given file the given configuration
 def write_config(config, file_name='template.cfg'):
     with open(file_name, 'wb') as configfile:
         config.write(configfile)

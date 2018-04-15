@@ -38,7 +38,7 @@ parser.add_argument('-f', type=str, default='template.cfg',
 class nfckeg(object):
     """nfckeg"""
 
-    def __init__(self, pin, impn, impf):
+    def __init__(self, pin, impn, impf, impnotify):
         super(nfckeg, self).__init__()
         self.NFC = None
         self.Flow_meter = None
@@ -46,25 +46,28 @@ class nfckeg(object):
         self.beer = {}
         self.pin = pin
         self.lastdata_FLOW = 0.0
-        self.impn = impn
-        self.impf = impf
+        self.implementation_nfc = impn
+        self.implementation_flow = impf
+        self.implementation_notify = impnotify
 
-        self.notify = notifications.MockNotification()
-        # self.notify = notifications.TelegramNotification()
 
-    def create_sensors(self):
+    def instance_objects(self):
         NFC_name = "NFC"
         Flow_name = "FLOW"
 
-        if (self.impn == 'mock'):
+        if self.is_mock(self.implementation_nfc):
             self.NFC = sensors.mocksensor.NFCSensor(NFC_name)
         else:
             self.NFC = sensors.realsensor.NFCSensor(NFC_name)
 
-        if (self.impf == 'mock'):
+        if self.is_mock(self.implementation_flow):
             self.Flow_meter = sensors.mocksensor.FlowSensor(Flow_name)
         else:
             self.Flow_meter = sensors.realsensor.FlowSensor(Flow_name, self.pin)
+        if self.is_mock(self.implementation_notify):
+            self.notify = notifications.MockNotification()
+        else:
+            self.notify = notifications.TelegramNotification()
 
     def is_mock(self, item):
         return item == 'mock'
@@ -90,7 +93,7 @@ class nfckeg(object):
             print 'Relay off'
 
     def main(self):
-        self.create_sensors()
+        self.instance_objects()
 
         while True:
             self.get_state()
@@ -159,14 +162,9 @@ def write_config(config, file_name='template.cfg'):
         config.write(configfile)
 
 
-def instance_objects():
-    pass
-
-
 if __name__ == '__main__':
     args = parser.parse_args()
     config = check_cfg(args.f)
-    # instance_objects()
     pin = get_value(config, 'Section1', 'pin')
     random.seed(2)
     NFCKEG = nfckeg(pin, args.impn, args.impf)

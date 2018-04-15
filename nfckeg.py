@@ -31,6 +31,8 @@ parser.add_argument('-impn', type=str, default='mock', choices=['mock', 'real'],
                     help='Choose between mock or real implementation for NFC')
 parser.add_argument('-impf', type=str, default='mock', choices=['mock', 'real'],
                     help='Choose between mock or real implementation for flow meter')
+parser.add_argument('-impnotify', type=str, default='mock', choices=['mock', 'real'],
+                    help='Choose between mock or real implementation for notification')
 parser.add_argument('-f', type=str, default='template.cfg',
                     help='Configfile')
 
@@ -42,6 +44,7 @@ class nfckeg(object):
         super(nfckeg, self).__init__()
         self.NFC = None
         self.Flow_meter = None
+        self.notify = None
         self.Relay = None
         self.beer = {}
         self.pin = pin
@@ -167,5 +170,5 @@ if __name__ == '__main__':
     config = check_cfg(args.f)
     pin = get_value(config, 'Section1', 'pin')
     random.seed(2)
-    NFCKEG = nfckeg(pin, args.impn, args.impf)
+    NFCKEG = nfckeg(pin, args.impn, args.impf, args.impnotify)
     NFCKEG.main()

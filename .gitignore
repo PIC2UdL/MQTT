@@ -102,3 +102,6 @@ ENV/
 
 # Configuration file
 *.cfg
+
+#
+.idea/*

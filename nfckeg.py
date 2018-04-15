@@ -7,24 +7,30 @@ import random
 import sys
 import time
 
-import notifications
+import notification
 import sensors
-
-#
 
 # Create Logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Define the formatter
-formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+console_formatter = logging.Formatter("[%(levelname)-5.5s]  %(message)s")
 
 # Create the file to save the results
-file_handler = logging.FileHandler('Difference.log')
+file_handler = logging.FileHandler('AdvancedLogg.log')
 file_handler.setFormatter(formatter)
 
 # Add file and stream in the logging already created before
 logger.addHandler(file_handler)
+file_handler.setLevel(logging.DEBUG)
+
+# Handler to send messages to streams like sys.stdout, sys.stderr or any file-like object
+consolehandler = logging.StreamHandler()
+consolehandler.setFormatter(console_formatter)
+consolehandler.setLevel(logging.INFO)
+logger.addHandler(consolehandler)
 
 parser = argparse.ArgumentParser(description='Receive the arguments for the program')
 parser.add_argument('-impn', type=str, default='mock', choices=['mock', 'real'],
@@ -40,7 +46,7 @@ parser.add_argument('-f', type=str, default='template.cfg',
 class nfckeg(object):
     """nfckeg"""
 
-    def __init__(self, pin, impn, impf, impnotify):
+    def __init__(self, pin, impn, impf, impnotify, token, chat_id,logger):
         super(nfckeg, self).__init__()
         self.NFC = None
         self.Flow_meter = None
@@ -52,8 +58,11 @@ class nfckeg(object):
         self.implementation_nfc = impn
         self.implementation_flow = impf
         self.implementation_notify = impnotify
+        self.token = token
+        self.chat_id = chat_id
+        self.logger = logger
 
-
+    # Function used to choose for each case the implementation for each instanced object
     def instance_objects(self):
         NFC_name = "NFC"
         Flow_name = "FLOW"
@@ -68,9 +77,9 @@ class nfckeg(object):
         else:
             self.Flow_meter = sensors.realsensor.FlowSensor(Flow_name, self.pin)
         if self.is_mock(self.implementation_notify):
-            self.notify = notifications.MockNotification()
+            self.notify = notification.MockNotification(self.token, self.chat_id, self.logger)
         else:
-            self.notify = notifications.TelegramNotification()
+            self.notify = notification.TelegramNotification(self.token, self.chat_id, self.logger)
 
     def is_mock(self, item):
         return item == 'mock'
@@ -111,6 +120,7 @@ class nfckeg(object):
             time.sleep(1)
         pass
 
+
 # Function to check if there is a file with given name and create new template or read given file.
 def check_cfg(file_name):
     import os.path
@@ -126,6 +136,7 @@ def check_cfg(file_name):
 
 def get_value(config, section, option):
     return config.getint(section, option)
+
 
 # Function that give information about wich field you have to fill
 def read_cfg(file_name, config):
@@ -169,6 +180,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     config = check_cfg(args.f)
     pin = get_value(config, 'Section1', 'pin')
+    chat_id = get_value(config, 'Notifications', 'Chat_id')
+    token = get_value(config, 'Notifications', 'Token')
+
     random.seed(2)
-    NFCKEG = nfckeg(pin, args.impn, args.impf, args.impnotify)
+    NFCKEG = nfckeg(pin, args.impn, args.impf, args.impnotify, chat_id, token, logger)
     NFCKEG.main()

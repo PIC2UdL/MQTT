@@ -36,8 +36,6 @@ class FlowSensor(NumericSensor):
         self.value = 0.0
         self.flow_acumulative = 0.0
         self.pin = pin
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         self.lastvalue = 0.0
         self.state = True
 

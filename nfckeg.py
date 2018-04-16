@@ -46,7 +46,7 @@ parser.add_argument('-f', type=str, default='template.cfg',
 class nfckeg(object):
     """nfckeg"""
 
-    def __init__(self, pin, impn, impf, impnotify, token, chat_id,logger):
+    def __init__(self, pin, impn, impf, impnotify, token, chat_id, logger):
         super(nfckeg, self).__init__()
         self.NFC = None
         self.Flow_meter = None
@@ -115,8 +115,8 @@ class nfckeg(object):
             for tarjetas in self.beer:
                 message = ('{}: {}'.format(tarjetas, self.beer[tarjetas]))
                 print message
-                # self.notify.notify(self.user, message)
-                # self.notify.broadcast(message)
+                self.notify.notify(message)
+                self.notify.broadcast(message)
             time.sleep(1)
         pass
 
@@ -130,12 +130,16 @@ def check_cfg(file_name):
     else:
         write_config(config)
         logger.error('Config file {} not found. Update the new template: '.format(file_name))
+        logger.info('-"pin" is the pin of flow sensor\n\
+         -"Token" is the token of the bot telegram\n\
+         -"Chat_id" is the chat_id of the bot telegram or the address of a user.\n\
+         ***If It is a list of users use a " "(space) to separate them***')
         sys.exit()
     return config
 
 
 def get_value(config, section, option):
-    return config.getint(section, option)
+    return config.get(section, option)
 
 
 # Function that give information about wich field you have to fill
@@ -179,10 +183,10 @@ def write_config(config, file_name='template.cfg'):
 if __name__ == '__main__':
     args = parser.parse_args()
     config = check_cfg(args.f)
-    pin = get_value(config, 'Section1', 'pin')
+    pin = int(get_value(config, 'Section1', 'pin'))
     chat_id = get_value(config, 'Notifications', 'Chat_id')
     token = get_value(config, 'Notifications', 'Token')
 
     random.seed(2)
-    NFCKEG = nfckeg(pin, args.impn, args.impf, args.impnotify, chat_id, token, logger)
+    NFCKEG = nfckeg(pin, args.impn, args.impf, args.impnotify, token, chat_id, logger)
     NFCKEG.main()

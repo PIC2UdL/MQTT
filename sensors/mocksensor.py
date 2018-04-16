@@ -2,8 +2,6 @@ from .binary import BinarySensor
 from .numeric import NumericSensor
 from sensorslibrary import Sensorslibrary
 
-#import Adafruit_DHT
-#import RPi.GPIO as GPIO
 
 class NFCSensor(NumericSensor):
     """NFCSensor"""
@@ -23,8 +21,6 @@ class NFCSensor(NumericSensor):
         return "Error"
         pass
 
-    def reset_cumulative(self):
-        pass
 
 class FlowSensor(NumericSensor):
     """FlowSensor"""
@@ -43,14 +39,3 @@ class FlowSensor(NumericSensor):
     def reset_cumulative(self):
             self.flow_acumulative = 0.0
             pass
-
-class RelaySensor(BinarySensor):
-    """RelaySensor"""
-    def __init__(self, name):
-        super(RelaySensor, self).__init__(name)
-
-    def setup(self, status):
-        if (status == 'on'):
-            self.state = 1
-        else:
-            self.state = 0

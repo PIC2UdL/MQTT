@@ -6,9 +6,10 @@ class Notification(object):
         self.token = token
         self.chat_id = chat_id
         self.logger = logger
-        self.chat_id_list = chat_id.split()
+        self.chat_id_list = chat_id.split(' ')
 
-    def notify(self, user, message):
+
+    def notify(self, message):
         pass
 
     def broadcast(self, message):
@@ -20,8 +21,9 @@ class MockNotification(Notification):
         Notification.__init__(self, token, chat_id, logger)
         self.logger.debug('MockNotification initialized')
 
-    def notify(self, user, message):
-        self.logger.info('Message {} send to user {}'.format(message, user))
+    def notify(self, message):
+        if (len(self.chat_id_list) == 1):
+            self.logger.info('Message {} send to user {}'.format(message, self.chat_id))
 
     def broadcast(self, message):
         self.logger.debug("Initialized Broadcast")

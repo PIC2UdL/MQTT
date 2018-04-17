@@ -101,6 +101,7 @@ class nfckeg(object):
                         difference = data_FLOW - self.lastdata_FLOW
                         logger.debug('Difference: {}'.format(difference))
                     self.lastdata_FLOW = data_FLOW
+                    self.Flow_meter.value = 0.0
                     break
             print 'Relay off'
 

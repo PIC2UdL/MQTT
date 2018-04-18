@@ -21,7 +21,7 @@ class MockNotification(Notification):
         self.logger.debug('MockNotification initialized')
 
     def notify(self, user, message):
-        self.logger.info('Message {} send to user {}'.format(message, self.chat_id))
+        self.logger.info('Message {} send to user {}'.format(message, user))
 
     def broadcast(self, message):
         self.logger.debug("Initialized Broadcast")

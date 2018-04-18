@@ -41,12 +41,14 @@ parser.add_argument('-impnotify', type=str, default='mock', choices=['mock', 're
                     help='Choose between mock or real implementation for notification')
 parser.add_argument('-f', type=str, default='template.cfg',
                     help='Configfile')
+parser.add_argument('-u', type=str, default='broadcast',
+                    help='Choose to notify by broadcast to all users from configfile or the specific user')
 
 
 class nfckeg(object):
     """nfckeg"""
 
-    def __init__(self, pin, impn, impf, impnotify, token, chat_id, logger):
+    def __init__(self, pin, impn, impf, impnotify, token, chat_id, user, logger):
         super(nfckeg, self).__init__()
         self.NFC = None
         self.Flow_meter = None
@@ -61,6 +63,7 @@ class nfckeg(object):
         self.token = token
         self.chat_id = chat_id
         self.logger = logger
+        self.user = user
 
     # Function used to choose for each case the implementation for each instanced object
     def instance_objects(self):
@@ -77,9 +80,9 @@ class nfckeg(object):
         else:
             self.Flow_meter = sensors.realsensor.FlowSensor(Flow_name, self.pin)
         if self.is_mock(self.implementation_notify):
-            self.notify = notification.MockNotification(self.token, self.chat_id, self.logger)
+            self.notification = notification.MockNotification(self.token, self.chat_id, self.logger)
         else:
-            self.notify = notification.TelegramNotification(self.token, self.chat_id, self.logger)
+            self.notification = notification.TelegramNotification(self.token, self.chat_id, self.logger)
 
     def is_mock(self, item):
         return item == 'mock'
@@ -116,8 +119,11 @@ class nfckeg(object):
             for tarjetas in self.beer:
                 message = ('{}: {}'.format(tarjetas, self.beer[tarjetas]))
                 print message
-                self.notify.notify(message)
-                self.notify.broadcast(message)
+                if self.user == 'broadcast':
+                    self.notification.broadcast(message)
+                else:
+                    self.notification.notify(self.user, message)
+
             time.sleep(1)
         pass
 
@@ -189,5 +195,5 @@ if __name__ == '__main__':
     token = get_value(config, 'Notifications', 'Token')
 
     random.seed(2)
-    NFCKEG = nfckeg(pin, args.impn, args.impf, args.impnotify, token, chat_id, logger)
+    NFCKEG = nfckeg(pin, args.impn, args.impf, args.impnotify, token, chat_id, args.u, logger)
     NFCKEG.main()

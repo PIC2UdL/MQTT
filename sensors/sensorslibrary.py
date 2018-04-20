@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-#-*-coding:utf_8-*-
+# -*-coding:utf_8-*-
 
 import random
 import time
 
+
+# Class created to get the mock values.
 class Sensorslibrary(object):
     """Sensorslibrary"""
+
     def __init__(self):
         super(Sensorslibrary, self).__init__()
 

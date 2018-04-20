@@ -4,6 +4,8 @@ from .main import Notification
 
 
 class TelegramNotification(Notification):
+    """Class which notify via Telegram"""
+
     def __init__(self, token, chat_id, logger):
         Notification.__init__(self, token, chat_id, logger)
         self.bot = telepot.Bot(self.token)

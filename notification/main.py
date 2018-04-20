@@ -1,6 +1,4 @@
 class Notification(object):
-    """Notification"""
-
     def __init__(self, token, chat_id, logger):
         super(Notification, self).__init__()
         self.token = token

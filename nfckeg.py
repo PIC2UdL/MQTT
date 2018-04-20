@@ -46,8 +46,6 @@ parser.add_argument('-u', type=str, default='broadcast',
 
 
 class nfckeg(object):
-    """nfckeg"""
-
     def __init__(self, pin, impn, impf, impnotify, token, chat_id, user, logger):
         super(nfckeg, self).__init__()
         self.NFC = None
@@ -87,45 +85,51 @@ class nfckeg(object):
     def is_mock(self, item):
         return item == 'mock'
 
+    # Function used to get NFC identification and we assign a flow value.
     def get_state(self):
         self.NFC.setup()
         data_NFC = self.NFC.get_data()
 
+        # In case that there are any NFC value, relay will turn on.
         if (data_NFC != None):
-            print 'Relay on'
+            logger.info('Relay on')
 
             while True:
                 self.Flow_meter.setup()
                 data_FLOW = self.Flow_meter.get_data()
 
+                # If there is a flow, assign the quantity of beer to its NFC card.
                 if (data_FLOW != 0):
                     self.beer[data_NFC] = self.beer.get(data_NFC, 0) + data_FLOW
+
+                    # If it's not the first value, calculate the difference between last value and the current one.
                     if (self.lastdata_FLOW != 0):
                         difference = data_FLOW - self.lastdata_FLOW
                         logger.debug('Difference: {}'.format(difference))
                     self.lastdata_FLOW = data_FLOW
+
+                    # Reset the value to start the next iteration.
                     self.Flow_meter.value = 0.0
                     break
-            print 'Relay off'
+            logger.info('Relay off')
 
+    # In the main loop we create the instances and get the value every n seconds.
     def main(self):
         self.instance_objects()
 
         while True:
             self.get_state()
 
-            print ("This is the acumulative of beer: {} Litro(s)".format(self.Flow_meter.get_acumulative()))
+            logger.info("This is the acumulative of beer: {} Litro(s)".format(self.Flow_meter.get_acumulative()))
 
             for tarjetas in self.beer:
                 message = ('{}: {}'.format(tarjetas, self.beer[tarjetas]))
-                print message
                 if self.user == 'broadcast':
                     self.notification.broadcast(message)
                 else:
                     self.notification.notify(self.user, message)
 
             time.sleep(1)
-        pass
 
 
 # Function to check if there is a file with given name and create new template or read given file.
@@ -139,7 +143,7 @@ def check_cfg(file_name):
         logger.error('Config file {} not found. Update the new template: '.format(file_name))
         logger.info('-"pin" is the pin of flow sensor\n\
          -"Token" is the token of the bot telegram\n\
-         -"Chat_id" is the chat_id of the bot telegram or the address of a user.\n\
+         -"Chat_id" is the chat_id of the bot telegram.\n\
          ***If It is a list of users use a " "(space) to separate them***')
         sys.exit()
     return config
@@ -149,7 +153,7 @@ def get_value(config, section, option):
     return config.get(section, option)
 
 
-# Function that give information about wich field you have to fill
+# Function that give information about which field you have to fill
 def read_cfg(file_name, config):
     config.read(file_name)
     write_config(config, file_name)

@@ -7,30 +7,29 @@ from .numeric import NumericSensor
 
 
 class NFCSensor(NumericSensor):
-    """NFCSensor"""
+    """NFCSensor class """
+
     def __init__(self, name):
         super(NFCSensor, self).__init__(name)
         self.value = None
 
+    # Update the value of NFC sensor.
     def setup(self):
         reader = SimpleMFRC522.SimpleMFRC522()
 
         try:
-                id, text = reader.read()
-                self.value = id
+            id, text = reader.read()
+            self.value = id
         finally:
-                GPIO.cleanup()
-        pass
+            GPIO.cleanup()
 
     def get_acumulative(self):
         return "Error"
-        pass
 
-    def reset_cumulative(self):
-        pass
 
 class FlowSensor(NumericSensor):
-    """FlowSensor"""
+    """FlowSensor class"""
+
     def __init__(self, name, pin):
         super(FlowSensor, self).__init__(name)
         self.value = 0.0
@@ -39,8 +38,9 @@ class FlowSensor(NumericSensor):
         self.lastvalue = 0.0
         self.state = True
 
+    # Add the values get from flow sensor converting the pulses given in liters with a conversion factor.
     def countPulse(self, channel):
-        self.value = self.value + (0.5/1765)
+        self.value = self.value + (0.5 / 1765)
 
     def setup(self):
         GPIO.setmode(GPIO.BCM)
@@ -50,13 +50,14 @@ class FlowSensor(NumericSensor):
 
         while True:
             time.sleep(3)
-            if(self.lastvalue == self.value):
+            if (self.lastvalue == self.value):
                 self.flow_acumulative += self.value
                 break
             self.lastvalue = self.value
 
         GPIO.cleanup()
 
+    # Return the value of cumulative flow.
     def get_acumulative(self):
         return self.flow_acumulative
 

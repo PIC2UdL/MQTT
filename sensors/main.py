@@ -16,8 +16,8 @@ class Sensor(object):
     def get_data(self):
         pass
 
-    def get_acumulative(self):
+    def get_cumulative(self):
         pass
 
-    def reset_acumulative(self):
+    def reset_cumulative(self):
         pass

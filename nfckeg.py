@@ -69,6 +69,7 @@ class nfckeg(object):
     def instance_objects(self):
         NFC_name = "NFC"
         Flow_name = "FLOW"
+        ESPFlow_name = "GUEST"
 
         if is_mock(self.implementation_nfc):
             self.NFC = sensors.mocksensor.NFCSensor(NFC_name)
@@ -77,11 +78,11 @@ class nfckeg(object):
 
         if is_mock(self.implementation_flow):
             self.Flow_meter = sensors.mocksensor.FlowSensor(Flow_name)
-        elif is_esp(self.implementation_flow):
-            self.Flow_meter = sensors.realsensor.ESPFlow(Flow_name)
         else:
             self.Flow_meter = sensors.realsensor.FlowSensor(Flow_name, self.pin)
         self.Flow_meter.setup()
+        self.ESPFlow_meter = sensors.realsensor.ESPFlow(ESPFlow_name)
+        self.ESPFlow_meter.setup()
         if is_mock(self.implementation_notify):
             self.notification = notification.MockNotification(self.token, self.chat_id, self.logger)
         else:
@@ -91,7 +92,6 @@ class nfckeg(object):
     def get_state(self):
         self.NFC.setup()
         data_NFC = self.NFC.get_data()
-
         # In case that there are any NFC value, relay will turn on.
         if data_NFC is not None:
             logger.info('NFC {} detected'.format(data_NFC))
@@ -108,11 +108,11 @@ class nfckeg(object):
                     # If it's not the first value, calculate the difference between last value and the current one.
                     logger.info('Difference: {}'.format(data_FLOW))
                     break
-            logger.info('Relay off -> no music')
+            logger.info('Relay off')
             self.send_updated_info()
 
     def send_updated_info(self):
-        logger.info("This is the acumulative of beer: {} Litro(s)".format(self.Flow_meter.get_acumulative()))
+        logger.info("This is the cumulative of beer: {} Litro(s)".format(self.Flow_meter.get_cumulative()))
 
         for tarjetas in self.beer:
             message = ('{}: {}'.format(tarjetas, self.beer[tarjetas]))

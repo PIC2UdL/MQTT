@@ -35,10 +35,10 @@ class Test(NumericSensor):
         self.flow_acumulative = 0.0
 
     # Return the value of cumulative flow.
-    def get_acumulative(self):
+    def get_cumulative(self):
         return self.flow_acumulative
 
-    def reset_acumulative(self):
+    def reset_cumulative(self):
         self.flow_acumulative = 0.0
 
 
@@ -50,7 +50,7 @@ class FlowSensor(NumericSensor):
         self.value = 0.0
         self.pin = pin
         self.state = True
-        self.flow_acumulative = 0.0
+        self.flow_cumulative = 0.0
 
     def setup(self):
         GPIO.cleanup()
@@ -64,7 +64,7 @@ class FlowSensor(NumericSensor):
         while True:
             time.sleep(3)
             if lastvalue == self.value:
-                self.flow_acumulative += self.value
+                self.flow_cumulative += self.value
                 break
             lastvalue = self.value
 
@@ -73,18 +73,19 @@ class FlowSensor(NumericSensor):
         self.value = self.value + (0.5 / 1765)
 
     # Return the value of cumulative flow.
-    def get_acumulative(self):
-        return self.flow_acumulative
+    def get_cumulative(self):
+        return self.flow_cumulative
 
-    def reset_acumulative(self):
-        self.flow_acumulative = 0.0
+    def reset_cumulative(self):
+        self.flow_cumulative = 0.0
 
 
 class ESPFlow(NumericSensor):
     """ESPFlow class"""
 
-    def __init__(self, name):
+    def __init__(self, name, logger):
         super(ESPFlow, self).__init__(name)
+        self.logger = logger
 
     def setup(self):
         client = mqtt.Client()
@@ -108,5 +109,5 @@ class ESPFlow(NumericSensor):
 
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
-        print(msg.topic + " " + str(msg.payload))
+        self.logger.info('Received {} from topic {} ({})'.format(msg.payload, msg.topic, self.name))
         self.countPulse(float(msg.payload))

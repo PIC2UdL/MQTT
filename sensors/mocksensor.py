@@ -11,14 +11,10 @@ class NFCSensor(NumericSensor):
         self.value = None
 
     def setup(self):
-        # try:
-        #     self.value = Sensorslibrary.nfc()
-        # except:
-        #     print("Error!")
         self.value = Sensorslibrary.nfc()
 
-    def get_acumulative(self):
-        return "Error"
+    def get_cumulative(self):
+        raise NotImplementedError()
 
 
 class FlowSensor(NumericSensor):
@@ -26,14 +22,14 @@ class FlowSensor(NumericSensor):
 
     def __init__(self, name):
         super(FlowSensor, self).__init__(name)
-        self.flow_acumulative = 0.0
+        self.flow_cumulative = 0.0
 
     def update(self):
         self.value = Sensorslibrary.flow()
-        self.flow_acumulative += self.value
+        self.flow_cumulative += self.value
 
-    def get_acumulative(self):
-        return self.flow_acumulative
+    def get_cumulative(self):
+        return self.flow_cumulative
 
-    def reset_acumulative(self):
-        self.flow_acumulative = 0.0
+    def reset_cumulative(self):
+        self.flow_cumulative = 0.0

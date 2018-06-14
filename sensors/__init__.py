@@ -1,11 +1,9 @@
-from .main import Sensor
 from .binary import BinarySensor
-from .numeric import NumericSensor
-from .mocksensor import NFCSensor
+from .main import Sensor
 from .mocksensor import FlowSensor
-from .realsensor import FlowSensor
-from .realsensor import NFCSensor
+from .mocksensor import NFCSensor
+from .numeric import NumericSensor
+from .realsensor import *
 
-
-
-__all__ = ["Sensor", "BinarySensor", "NumericSensor", "NFCSensor", "FlowSensor"]
+# __all__ = ["Sensor", "BinarySensor", "NumericSensor", "NFCSensor", "FlowSensor", "ESPFlow"]
+__all__ = ["Sensor", "BinarySensor", "NumericSensor", "FlowSensor", "ESPFlow"]

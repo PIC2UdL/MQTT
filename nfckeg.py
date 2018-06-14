@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*-coding:utf_8-*-
-import ConfigParser
 import argparse
 import logging
 import random
 import sys
 import time
+from collections import defaultdict
+
+import ConfigParser
 
 import notification
 import sensors
@@ -35,7 +37,7 @@ logger.addHandler(consolehandler)
 parser = argparse.ArgumentParser(description='Receive the arguments for the program')
 parser.add_argument('-impn', type=str, default='mock', choices=['mock', 'real'],
                     help='Choose between mock or real implementation for NFC')
-parser.add_argument('-impf', type=str, default='mock', choices=['mock', 'real'],
+parser.add_argument('-impf', type=str, default='mock', choices=['mock', 'real', 'esp'],
                     help='Choose between mock or real implementation for flow meter')
 parser.add_argument('-impnotify', type=str, default='mock', choices=['mock', 'real'],
                     help='Choose between mock or real implementation for notification')
@@ -52,7 +54,7 @@ class nfckeg(object):
         self.Flow_meter = None
         self.notify = None
         self.Relay = None
-        self.beer = {}
+        self.beer = defaultdict(int)
         self.pin = pin
         self.lastdata_FLOW = 0.0
         self.implementation_nfc = impn
@@ -68,22 +70,22 @@ class nfckeg(object):
         NFC_name = "NFC"
         Flow_name = "FLOW"
 
-        if self.is_mock(self.implementation_nfc):
+        if is_mock(self.implementation_nfc):
             self.NFC = sensors.mocksensor.NFCSensor(NFC_name)
         else:
             self.NFC = sensors.realsensor.NFCSensor(NFC_name)
 
-        if self.is_mock(self.implementation_flow):
+        if is_mock(self.implementation_flow):
             self.Flow_meter = sensors.mocksensor.FlowSensor(Flow_name)
+        elif is_esp(self.implementation_flow):
+            self.Flow_meter = sensors.realsensor.ESPSensor(Flow_name)
         else:
             self.Flow_meter = sensors.realsensor.FlowSensor(Flow_name, self.pin)
-        if self.is_mock(self.implementation_notify):
+        self.Flow_meter.setup()
+        if is_mock(self.implementation_notify):
             self.notification = notification.MockNotification(self.token, self.chat_id, self.logger)
         else:
             self.notification = notification.TelegramNotification(self.token, self.chat_id, self.logger)
-
-    def is_mock(self, item):
-        return item == 'mock'
 
     # Function used to get NFC identification and we assign a flow value.
     def get_state(self):
@@ -91,27 +93,33 @@ class nfckeg(object):
         data_NFC = self.NFC.get_data()
 
         # In case that there are any NFC value, relay will turn on.
-        if (data_NFC != None):
-            logger.info('Relay on')
+        if data_NFC is not None:
+            logger.info('NFC {} detected'.format(data_NFC))
+            logger.info('Relay on with music')
 
             while True:
-                self.Flow_meter.setup()
+                self.Flow_meter.update()
                 data_FLOW = self.Flow_meter.get_data()
 
                 # If there is a flow, assign the quantity of beer to its NFC card.
-                if (data_FLOW != 0):
-                    self.beer[data_NFC] = self.beer.get(data_NFC, 0) + data_FLOW
-
+                if data_FLOW != 0:
+                    self.Flow_meter.reset_data()
+                    self.beer[data_NFC] += data_FLOW
                     # If it's not the first value, calculate the difference between last value and the current one.
-                    if (self.lastdata_FLOW != 0):
-                        difference = data_FLOW - self.lastdata_FLOW
-                        logger.debug('Difference: {}'.format(difference))
-                    self.lastdata_FLOW = data_FLOW
-
-                    # Reset the value to start the next iteration.
-                    self.Flow_meter.value = 0.0
+                    logger.info('Difference: {}'.format(data_FLOW))
                     break
-            logger.info('Relay off')
+            logger.info('Relay off -> no music')
+            self.send_updated_info()
+
+    def send_updated_info(self):
+        logger.info("This is the acumulative of beer: {} Litro(s)".format(self.Flow_meter.get_acumulative()))
+
+        for tarjetas in self.beer:
+            message = ('{}: {}'.format(tarjetas, self.beer[tarjetas]))
+            if self.user == 'broadcast':
+                self.notification.broadcast(message)
+            else:
+                self.notification.notify(self.user, message)
 
     # In the main loop we create the instances and get the value every n seconds.
     def main(self):
@@ -119,16 +127,6 @@ class nfckeg(object):
 
         while True:
             self.get_state()
-
-            logger.info("This is the acumulative of beer: {} Litro(s)".format(self.Flow_meter.get_acumulative()))
-
-            for tarjetas in self.beer:
-                message = ('{}: {}'.format(tarjetas, self.beer[tarjetas]))
-                if self.user == 'broadcast':
-                    self.notification.broadcast(message)
-                else:
-                    self.notification.notify(self.user, message)
-
             time.sleep(1)
 
 
@@ -166,12 +164,7 @@ def read_cfg(file_name, config):
 
 # Check if in given configuration all values are filled, return a list with empty ones
 def get_remaining(config):
-    remaining = []
-    for k, v in config._sections.items():
-        for k1, v1 in v.items():
-            if v1 == '':
-                remaining.append((k, k1))
-    return remaining
+    return [(k, k1) for k, v in config._sections.items() for k1, v1 in v.items() if v1 == '']
 
 
 # Function that create a template to store configuration
@@ -189,6 +182,14 @@ def crear_plantilla():
 def write_config(config, file_name='template.cfg'):
     with open(file_name, 'wb') as configfile:
         config.write(configfile)
+
+
+def is_mock(item):
+    return item == 'mock'
+
+
+def is_esp(item):
+    return item == 'esp'
 
 
 if __name__ == '__main__':

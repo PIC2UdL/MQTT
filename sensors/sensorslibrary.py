@@ -15,9 +15,8 @@ class Sensorslibrary(object):
     @staticmethod
     def nfc():
         time.sleep(1)
-        if random.randint(1, 4) == 3:
-            return random.choice(['ABCD136468', 'BCDE789514', 'CDEF663247'])
-        return None
+        fake_nfc_id = ['ABCD136468', 'BCDE789514', 'CDEF663247']
+        return random.choice(fake_nfc_id) if random.randint(1, 4) == 3 else None
 
     @staticmethod
     def flow():

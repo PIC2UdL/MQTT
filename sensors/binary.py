@@ -1,7 +1,9 @@
 from .main import Sensor
 
+
 class BinarySensor(Sensor):
     """BinarySensor"""
+
     def __init__(self, name):
         super(BinarySensor, self).__init__(name)
         self.state = False

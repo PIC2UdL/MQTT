@@ -1,8 +1,11 @@
 """
 Main sensor
 """
+
+
 class Sensor(object):
     """Main Sensor class"""
+
     def __init__(self, name):
         super(Sensor, self).__init__()
         self.name = name
@@ -13,8 +16,8 @@ class Sensor(object):
     def get_data(self):
         pass
 
-    def get_cumulative(self):
+    def get_acumulative(self):
         pass
 
-    def reset_cumulative(self):
+    def reset_acumulative(self):
         pass

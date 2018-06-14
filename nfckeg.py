@@ -37,7 +37,7 @@ logger.addHandler(consolehandler)
 parser = argparse.ArgumentParser(description='Receive the arguments for the program')
 parser.add_argument('-impn', type=str, default='mock', choices=['mock', 'real'],
                     help='Choose between mock or real implementation for NFC')
-parser.add_argument('-impf', type=str, default='mock', choices=['mock', 'real', 'esp'],
+parser.add_argument('-impf', type=str, default='mock', choices=['mock', 'real'],
                     help='Choose between mock or real implementation for flow meter')
 parser.add_argument('-impnotify', type=str, default='mock', choices=['mock', 'real'],
                     help='Choose between mock or real implementation for notification')
@@ -135,10 +135,14 @@ class nfckeg(object):
     # In the main loop we create the instances and get the value every n seconds.
     def main(self):
         self.instance_objects()
-
-        while True:
-            self.get_state()
-            time.sleep(1)
+        try:
+            while True:
+                self.get_state()
+                time.sleep(1)
+        except:
+            self.ESP_data()
+            for tarjetas in self.beer:
+                logger.info("For NFC {}: {} Litro(s)".format(tarjetas, self.beer[tarjetas]))
 
 
 # Function to check if there is a file with given name and create new template or read given file.

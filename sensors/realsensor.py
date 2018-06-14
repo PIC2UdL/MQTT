@@ -109,4 +109,4 @@ class ESPFlow(NumericSensor):
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
         print(msg.topic + " " + str(msg.payload))
-        self.countPulse(msg.payload)
+        self.countPulse(float(msg.payload))

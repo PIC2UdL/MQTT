@@ -78,7 +78,7 @@ class nfckeg(object):
         if is_mock(self.implementation_flow):
             self.Flow_meter = sensors.mocksensor.FlowSensor(Flow_name)
         elif is_esp(self.implementation_flow):
-            self.Flow_meter = sensors.realsensor.ESPSensor(Flow_name)
+            self.Flow_meter = sensors.realsensor.ESPFlow(Flow_name)
         else:
             self.Flow_meter = sensors.realsensor.FlowSensor(Flow_name, self.pin)
         self.Flow_meter.setup()

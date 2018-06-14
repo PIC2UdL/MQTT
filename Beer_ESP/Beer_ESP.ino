@@ -1,46 +1,17 @@
-//Map_pins:
-/*
-   #Relay D1
-   Flow D2
-
-   NFC:
-   3.3V --> 3.3V
-   GND --> GND
-   MISO --> D6
-   MOSI --> D7
-   SCK --> D5
-   SDA -->D4
-*/
-
 //Libraries:
 //Import the libraries of...
 //Wifi-->
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 
-
-//NFC-->
-#include <Wire.h>
-#include <MFRC522.h>
-#include <SPI.h>
-
 //MQTT-->
 #include <PubSubClient.h>
-
-
-//defines:
-//NFC-->
-#define RST_PIN 20 // RST-PIN for RC522 - RFID - SPI - Module GPIO15 
-#define SS_PIN  2  // SDA-PIN for RC522 - RFID - SPI - Module GPIO2
-MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance
-
-
-//MQTT-->
 //defines of id mqtt and topics for publish and subscribe
-#define NFC_PUBLISH   "/sensor/NFCSensor"    //topic MQTT to send information to the Broker(Raspberry Pi)
 #define FLOW_PUBLISH   "/sensor/FlowSensor"
 #define Relay_SUBSCRIBE   "/sensor/Relay"   //topic MQTT to receive information from the Broker(Raspberry Pi)
 #define ID_MQTT  "Anderson"
+
+#define MAX_DELAY 5
 
 //Variables and Global objects:
 //Wifi-->
@@ -55,14 +26,11 @@ const char* PASSWORD = "Z001349ECBA90";
 
 ESP8266WiFiMulti WiFiMulti;
 
-
-//NFC-->
-String content = "";
-
 //Flow-->
 float count = 0.0; // variable to store the “rise ups” from the flowmeter pulses
+int seconds = 0;
 float lastvalue = 0;
-const int  Flow = D2; // variable for D2 pin
+const int Flow = 4; // variable for D2 pin
 
 //Relay-->
 const int Relay = D1;
@@ -89,14 +57,8 @@ void initWiFi();
 void reconectWiFi();
 void VerificaConexoesWiFIEMQTT(void);
 
-//NFC-->
-void initNFC();
-void getNFCard();
-void SendNFCard(void);
-
 //Flow-->
 void getAmountOfBeer();
-void initFlow();
 void SendFlowmeter(void);
 
 //MQTT-->
@@ -108,17 +70,19 @@ void setup() {
   InitOutputs();
   initSerial();
   initWiFi();
-  initNFC();
-  initFlow();
   initMQTT();
 }
 
-//Function: Inicialize the Serial
-//Parameters: nothing
-//Retorn: nothing
-void initSerial()
-{
-  Serial.begin(115200);
+void loop() {
+  //keep-alive the comunication with the Broker MQTT
+  if (!MQTT.loop()) { //false - the client is no longer connected
+    VerificaConexoesWiFIEMQTT();
+  }
+  checkTemps();
+  if (digitalRead(Flow) == HIGH) {         // check if the input is HIGH (button released)
+    getAmountOfBeer();
+  }
+  delay(10);
 }
 
 //Functions:
@@ -135,45 +99,49 @@ void InitOutputs(void)
   pinMode(Flow, INPUT);
 }
 
+//Function: Inicialize the Serial
+//Parameters: nothing
+//Retorn: nothing
+void initSerial()
+{
+  Serial.begin(115200);
+}
+
 //Function: Inicialize and connect on the WI-FI
 //Parameters: nothing
 //Retorn: nothing
 void initWiFi()
 {
-  delay(10);
   Serial.println("------Conection WI-FI with NodeMCU -----");
   Serial.print("Connecting on WI-FI: ");
   Serial.println(SSID);
-  Serial.println("Wait");
+  Serial.println(SSID1);
+  Serial.println(SSID2);
+  // We start by connecting to a WiFi network
+  WiFi.mode(WIFI_STA);
+  WiFiMulti.addAP(SSID, PASSWORD);
+  WiFiMulti.addAP(SSID1, PASSWORD1);
+  WiFiMulti.addAP(SSID2, PASSWORD2);
 
-  reconectWiFi();
+  checkWiFi();
 }
 
-//Function: Inicialize parameters of NFC
+//Function: reconnect to broker MQTT and WI-FI
 //Parameters: nothing
 //Retorn: nothing
-void initNFC()
+void VerificaConexoesWiFIEMQTT(void)
 {
-  SPI.begin();           // Init SPI bus
-  mfrc522.PCD_Init();    // Init MFRC522
+  checkMQTT();
+  checkWiFi(); //reconnect on WI-Fi
 }
 
-//Function: Inicialize parameters of Flowmeter
+//Function: check WiFi
 //Parameters: nothing
 //Retorn: nothing
-void initFlow()
+void checkWiFi()
 {
-  // Attach an interrupt to the ISR vector
-  attachInterrupt(digitalPinToInterrupt(Flow), getAmountOfBeer, RISING);
-}
-
-//Function: Inicialize parameters of connetion MQTT
-//Parameters: nothing
-//Retorn: nothing
-void initMQTT()
-{
-  MQTT.setServer(BROKER_MQTT, BROKER_PORT);
-  MQTT.setCallback(mqtt_callback);
+  if (WiFiMulti.run() != WL_CONNECTED)
+    reconectWiFi();
 }
 
 //Function: reconnect to WiFi
@@ -181,26 +149,24 @@ void initMQTT()
 //Retorn: nothing
 void reconectWiFi()
 {
-  // We start by connecting to a WiFi network
-  WiFi.mode(WIFI_STA);
-  WiFiMulti.addAP(SSID, PASSWORD);
-  WiFiMulti.addAP(SSID1, PASSWORD1);
-  WiFiMulti.addAP(SSID2, PASSWORD2);
-  Serial.println();
-  Serial.println();
-  Serial.print("Wait for WiFi... ");
+  Serial.print("Wait for WiFi...");
 
   while (WiFiMulti.run() != WL_CONNECTED) {
-    Serial.print(".");
     delay(500);
+    Serial.print(".");
   }
 
-  Serial.println("");
   Serial.println("WiFi connected");
-  Serial.println("IP address: ");
+  Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-
-  delay(500);
+}
+//Function: check MQTT
+//Parameters: nothing
+//Retorn: nothing
+void checkMQTT()
+{
+  if (!MQTT.connected())
+    reconnectMQTT(); //reconnect with the broker
 }
 
 //Function: reconnect to broker MQTT
@@ -226,17 +192,14 @@ void reconnectMQTT()
   }
 }
 
-//Function: reconnect to broker MQTT and WI-FI
+//Function: Inicialize parameters of connetion MQTT
 //Parameters: nothing
 //Retorn: nothing
-void VerificaConexoesWiFIEMQTT(void)
+void initMQTT()
 {
-  if (!MQTT.connected())
-    reconnectMQTT(); //reconnect with the broker
-
-  reconectWiFi(); //reconnect on WI-Fi
+  MQTT.setServer(BROKER_MQTT, BROKER_PORT);
+  MQTT.setCallback(mqtt_callback);
 }
-
 
 //Function: function callback
 //        this funtion will be called everytime that one information come from the broker
@@ -271,66 +234,23 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
   }
 }
 
-//Function: Get the value of NFC card
-//Parameters: nothing
-//Retorn: nothing
-void getNFCard()
-{
-  // Look for new cards
-  if ( ! mfrc522.PICC_IsNewCardPresent()) {
-    delay(50);
-    return;
-  }
-  // Select one of the cards
-  if ( ! mfrc522.PICC_ReadCardSerial()) {
-    delay(50);
-    return;
-  }
-
-
-  // Shows the card ID on the serial console
-  for (byte i = 0; i < mfrc522.uid.size; i++)
-  {
-    content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-    content.concat(String(mfrc522.uid.uidByte[i], HEX));
-  }
-
-  Serial.println();
-  content.toUpperCase();
-  Serial.println("Cart read:" + content);
-
-  SendNFCard();
-
-}
-
-//Function: Send to Raspberry Pi the NFC Card
-//Parameters: nothing
-//Retorn: nothing
-void SendNFCard(void)
-{
-  char text[512];
-  content.toCharArray(text, 511);
-  MQTT.publish( "/sensor/NFCSensor",  ( const char*) text);
-  Serial.println(text);
-  Serial.println("- NFC Card sent to Raspberry(Server)");
-  delay(1000);
-}
-
-//Function: Get the amount of beer by NFC
+//Function: Get the amount of beer
 //Parameters: nothing
 //Retorn: nothing
 void getAmountOfBeer()
 {
   count += 1;
-  /*
-    delay(3000);
-    if (lastvalue == count){
-      break;
-    }
-    lastvalue = count;
-  */
+  seconds = 0;
+  Serial.print("Click ");
+  Serial.println(count);
 
-  SendFlowmeter();
+}
+void checkTemps() {
+  if (seconds > MAX_DELAY && count > 0) {
+    SendFlowmeter();
+  }
+
+  seconds += 1;
 }
 
 //Function: Send to Raspberry Pi the Flow value
@@ -338,25 +258,13 @@ void getAmountOfBeer()
 //Retorn: nothing
 void SendFlowmeter(void)
 {
-  static char Flow[7];
+  static char value[7];
   //double to string format, 6 cifras, 2 decimales
-  dtostrf(count, 6, 2, Flow);
-
-  MQTT.publish("/sensor/FlowSensor", Flow);
-  Serial.println(Flow);
-  Serial.println("- Flow value sent to Raspberry(Server)");
+  dtostrf(count, 6, 2, value);
+  MQTT.publish("/sensor/FlowSensor", value);
+  Serial.print("- Flow value ");
+  Serial.print(value);
+  Serial.println(" sent to Raspberry(Broker)");
+  count = 0;
 }
 
-void loop() {
-  //If need reconnect with the WI-FI and MQTT Broker
-  VerificaConexoesWiFIEMQTT();
-
-  //Get the NFC card and Flow
-  getNFCard();
-  getAmountOfBeer();
-  //keep-alive the comunication with the Broker MQTT
-  MQTT.loop();
-
-  //"Turn off"
-
-}

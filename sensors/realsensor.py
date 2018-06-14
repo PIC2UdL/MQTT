@@ -29,19 +29,6 @@ class NFCSensor(NumericSensor):
 '''
 
 
-class Test(NumericSensor):
-    def __init__(self, name):
-        super(Test, self).__init__(name)
-        self.flow_acumulative = 0.0
-
-    # Return the value of cumulative flow.
-    def get_cumulative(self):
-        return self.flow_acumulative
-
-    def reset_cumulative(self):
-        self.flow_acumulative = 0.0
-
-
 class FlowSensor(NumericSensor):
     """FlowSensor class"""
 
@@ -86,6 +73,7 @@ class ESPFlow(NumericSensor):
     def __init__(self, name, logger):
         super(ESPFlow, self).__init__(name)
         self.logger = logger
+        self.remaining = []
 
     def setup(self):
         client = mqtt.Client()
@@ -95,9 +83,14 @@ class ESPFlow(NumericSensor):
 
         client.loop_start()
 
+    def get_data(self):
+        tmp = self.remaining[:]
+        del self.remaining[:]
+        return tmp
+
     # Add the values get from flow sensor converting the pulses given in liters with a conversion factor.
     def countPulse(self, count):
-        self.value = count * (0.5 / 1765)
+        self.remaining.append(count * (0.5 / 1765))
 
     # The callback for when the client receives a CONNACK response from the server.
     def on_connect(self, client, userdata, flags, rc):
@@ -109,5 +102,5 @@ class ESPFlow(NumericSensor):
 
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
-        self.logger.info('Received {} from topic {} ({})'.format(msg.payload, msg.topic, self.name))
+        self.logger.debug('Received {} from topic {} ({})'.format(msg.payload, msg.topic, self.name))
         self.countPulse(float(msg.payload))

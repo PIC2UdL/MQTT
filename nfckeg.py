@@ -92,6 +92,7 @@ class nfckeg(object):
     def get_state(self):
         self.NFC.setup()
         data_NFC = self.NFC.get_data()
+        self.ESP_data()
         # In case that there are any NFC value, relay will turn on.
         if data_NFC is not None:
             logger.info('NFC {} detected'.format(data_NFC))
@@ -116,10 +117,20 @@ class nfckeg(object):
 
         for tarjetas in self.beer:
             message = ('{}: {}'.format(tarjetas, self.beer[tarjetas]))
-            if self.user == 'broadcast':
-                self.notification.broadcast(message)
-            else:
-                self.notification.notify(self.user, message)
+            self.notifier(message)
+
+    def ESP_data(self):
+        data_ESP = self.ESPFlow_meter.get_data()
+        for value in data_ESP:
+            self.beer['guest'] += value
+        if data_ESP:
+            self.notifier('guest: {} ({} beer/s)'.format(self.beer['guest'], len(data_ESP)))
+
+    def notifier(self, message):
+        if self.user == 'broadcast':
+            self.notification.broadcast(message)
+        else:
+            self.notification.notify(self.user, message)
 
     # In the main loop we create the instances and get the value every n seconds.
     def main(self):

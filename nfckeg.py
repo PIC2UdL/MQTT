@@ -81,7 +81,7 @@ class nfckeg(object):
         else:
             self.Flow_meter = sensors.realsensor.FlowSensor(Flow_name, self.pin)
         self.Flow_meter.setup()
-        self.ESPFlow_meter = sensors.realsensor.ESPFlow(ESPFlow_name)
+        self.ESPFlow_meter = sensors.realsensor.ESPFlow(ESPFlow_name, logger)
         self.ESPFlow_meter.setup()
         if is_mock(self.implementation_notify):
             self.notification = notification.MockNotification(self.token, self.chat_id, self.logger)
